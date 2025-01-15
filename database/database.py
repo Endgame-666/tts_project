@@ -1,0 +1,2 @@
+data = {}
+voice_data = {}
