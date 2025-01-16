@@ -6,9 +6,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.filters import Filter
 
 
-class RecipeCallback(CallbackData, prefix="message"):
+class MessageCallback(CallbackData, prefix="favorite"):
     action: str
-    id: str
+    message_id: str
+
 
 
 class MessageStates(StatesGroup):
