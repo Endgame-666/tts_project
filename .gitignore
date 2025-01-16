@@ -6,8 +6,8 @@ __pycache__/
 # C extensions
 *.so
 
-settings.py
-
+bot/settings.py
+.idea
 # Distribution / packaging
 .Python
 build/
