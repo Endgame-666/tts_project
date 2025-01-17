@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import sys
+import hashlib
 
 # aiogram
 from aiogram import Bot, Dispatcher, Router
@@ -41,7 +42,6 @@ async def new_message_request(message: Message, state: FSMContext):
     )
     await state.set_state(MessageStates.waiting_for_message_request)
 
-import hashlib
 
 def generate_safe_id(input_string: str) -> str:
     return hashlib.md5(input_string.encode()).hexdigest()
@@ -70,7 +70,6 @@ async def process_message_request(message: Message, state: FSMContext):
         audio_path = fr"{get_voice(voice_name, text)[2]}"
         voice_file = FSInputFile(audio_path)
 
-        # Генерация безопасного идентификатора
         message_id = generate_safe_id(audio_path)
 
         builder = InlineKeyboardBuilder()
