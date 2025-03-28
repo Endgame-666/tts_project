@@ -17,7 +17,7 @@ from bot.loading_messages import LoadingMessageManager
 from bot.keyboards.main_keyboard import get_main_keyboard
 from bot.settings import BOT_TOKEN
 from bot.filters import *
-from tts import split_text, get_voice
+from TTS import *
 from database.database import *
 
 

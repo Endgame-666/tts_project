@@ -1,3 +1,5 @@
+# Здесь находятся все возможные сообщения бота
+
 def welcome_message(message):
     return (
         f"{message.from_user.full_name}, добро пожаловать! Выберите действие:"

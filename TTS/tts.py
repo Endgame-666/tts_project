@@ -1,5 +1,5 @@
 from gradio_client import Client
-
+from TTS import models
 client = Client("http://127.0.0.1:7860/")
 
 voice_data_male = {"Джарвис": "Jarvis", "Путин": "Putin_model_200", "Валакас": "Valakas_350"}
