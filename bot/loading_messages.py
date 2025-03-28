@@ -35,6 +35,13 @@ class LoadingMessageManager:
                 if self.is_running:
                     await asyncio.sleep(1)
 
+    async def delete_message(self):
+        """Удаляет сообщение с загрузкой"""
+        try:
+            await self.message.delete()
+        except Exception as e:
+            print(f"Error deleting message: {e}")
+
     async def start(self):
         self.task = asyncio.create_task(self.update_loading_message())
         return self.task
@@ -49,3 +56,4 @@ class LoadingMessageManager:
                 pass
             except Exception as e:
                 print(f"Error stopping loading message task: {e}")
+        await self.delete_message()
