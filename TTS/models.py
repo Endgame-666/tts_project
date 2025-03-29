@@ -14,7 +14,7 @@ class ModelParams(TypedDict):
     protect: float  # степень заимствования голоса [0;0.5]
 
 
-models: dict[int, ModelParams] = {
+voices: dict[int, ModelParams] = {
     1: {
         "name": "Пудж",
         "speed": -10,

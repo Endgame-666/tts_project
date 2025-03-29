@@ -2,6 +2,7 @@ import asyncio
 import logging
 import sys
 import hashlib
+import json
 
 # aiogram
 from aiogram import Bot, Dispatcher, Router
@@ -17,7 +18,7 @@ from bot.loading_messages import LoadingMessageManager
 from bot.keyboards.main_keyboard import get_main_keyboard
 from bot.settings import BOT_TOKEN
 from bot.filters import *
-from TTS import *
+from TTS.tts import get_voice
 from database.database import *
 
 
@@ -31,43 +32,61 @@ async def cmd_start(message: Message):
     await message.answer(welcome_message(message), reply_markup=keyboard)
 
 
-@router.message(lambda msg: msg.text == buttons["new_message"])
+@router.message(lambda message: message.web_app_data)
 async def new_message_request(message: Message, state: FSMContext):
-    await message.answer(
-        new_message_welcome_text,
-        reply_markup=ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="Отмена")]],
-            resize_keyboard=True
-        )
-    )
-    await state.set_state(MessageStates.waiting_for_message_request)
+    web_data = message.web_app_data.data if message.web_app_data else None
+    if web_data:
+        try:
+            data = json.loads(web_data)
+            character_id = data.get('characterId', 0)
 
+            await state.update_data(character_id=character_id)
+            await state.set_state(MessageStates.waiting_for_message_request)
+
+            CHARACTER_NAMES = {
+                1: "Пудж 🔪⛓️💀",
+                2: "Шрек 💚🤬",
+                3: "Диппер 🧢🔦",
+                4: "Мейбл ✨🦄",
+                5: "Апвоут 💬❔",
+                6: "Дональд Дак 🦆🌊😠",
+                7: "Крош ⚡🐇",
+                8: "Геральт ⚔️🐺",
+                9: "Ургант 📺🎥",
+                0: "🚫❓"
+            }
+
+            response = (
+                f"🎉 Отличный выбор! 🎭\n"
+                f"🎯 Ваш персонаж: {CHARACTER_NAMES.get(character_id, 'неизвестный персонаж')}\n"
+                f"Теперь можно начинать озвучку! 🎙️\n"
+                f"Напишите сообщение, которое хотите озвучить✍️"
+            )
+
+        except json.JSONDecodeError:
+            response = "⚠️ Ошибка обработки выбора. Попробуйте еще раз!"
+    else:
+        response = "🔍 Вы пока не сделали выбор. Нажмите кнопку ниже! 👇"
+    await message.answer(response)
 
 def generate_safe_id(input_string: str) -> str:
     return hashlib.md5(input_string.encode()).hexdigest()
 
 @router.message(StateFilter(MessageStates.waiting_for_message_request))
 async def process_message_request(message: Message, state: FSMContext):
-    if message.text == "Отмена":
-        await message.answer(
-            "Конвертация сообщения в голос отменена",
-            reply_markup=get_main_keyboard()
-        )
-        await state.clear()
-        await message.answer("Выберите действие:", reply_markup=get_main_keyboard())
-        return
+    loading_manager = LoadingMessageManager()
+    loading_message = await message.answer("⏳ Начинаю обработку...")
+    await loading_manager.start(loading_message)
 
-    loading_message = await message.answer("🔍 Начинаю конвертацию голоса...")
-    loading_manager = LoadingMessageManager(loading_message)
+    data = await state.get_data()
+    character_id = data.get("character_id", 0)
 
     try:
-        await loading_manager.start()
-
         user_id = message.from_user.id
         message_text = message.text
-        voice_name, text = split_text(message_text)
 
-        audio_path = fr"{get_voice(voice_name, text)[2]}"
+        audio = get_voice(character_id, message_text)[2]
+        audio_path = fr"{audio}"
         voice_file = FSInputFile(audio_path)
 
         message_id = generate_safe_id(audio_path)
@@ -82,10 +101,8 @@ async def process_message_request(message: Message, state: FSMContext):
 
         await asyncio.sleep(3)
         await loading_manager.stop()
-
         await message.answer_voice(voice=voice_file, reply_markup=builder.as_markup())
-        await message.answer("Выберите действие:", reply_markup=get_main_keyboard())
-        await state.clear()
+        await state.set_state(MessageStates.waiting_for_message_request)
 
     except Exception as e:
         logging.error(f"Error in process_message_request: {e}")

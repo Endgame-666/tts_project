@@ -14,6 +14,7 @@ class MessageCallback(CallbackData, prefix="favorite"):
 
 class MessageStates(StatesGroup):
     waiting_for_message_request = State()
+    selected_character = State()
 
 
 class MenuButtonFilter(Filter):
