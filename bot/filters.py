@@ -15,7 +15,7 @@ class MessageCallback(CallbackData, prefix="favorite"):
 class MessageStates(StatesGroup):
     waiting_for_message_request = State()
     selected_character = State()
-
+    waiting_for_favorite_messages = State()
 
 class MenuButtonFilter(Filter):
     async def __call__(self, message: Message, state: FSMContext) -> bool:

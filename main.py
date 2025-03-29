@@ -21,9 +21,9 @@ from bot.keyboards.main_keyboard import get_main_keyboard
 from bot.settings import BOT_TOKEN
 from bot.filters import *
 from TTS.tts import get_voice
-#rom database.database import *
+from backend.database.user_db import DatabaseManager
 
-
+db_manager = DatabaseManager()
 dp = Dispatcher()
 router = Router()
 dp.include_router(router)
@@ -74,6 +74,46 @@ async def new_message_request(message: Message, state: FSMContext):
 def generate_safe_id(input_string: str) -> str:
     return hashlib.md5(input_string.encode()).hexdigest()
 
+@router.message(F.text == buttons["favorite_messages"] )
+async def get_favorites(message: Message):
+    user_id = message.from_user.id
+    user_data = await db_manager.get_user(user_id)
+
+    if not user_data or not user_data["favourite_messages"]:
+        await message.answer("🎵 У вас пока нет избранных аудиозаписей.")
+        return
+
+    await message.answer("🔊 Ваши избранные аудиозаписи:")
+    favourites = user_data["favourite_messages"]
+    print(favourites)
+    for audio_path in favourites:
+        try:
+            folder_name = os.path.basename(os.path.dirname(audio_path))
+            file = FSInputFile(audio_path)
+
+            builder = InlineKeyboardBuilder()
+            builder.row(
+                InlineKeyboardButton(
+                    text="❌Удалить из избранного",
+                    callback_data=MessageCallback(
+                        action="del",
+                        message_file=folder_name
+                    ).pack()
+                )
+            )
+
+            await message.answer_audio(
+                audio=file,
+                reply_markup=builder.as_markup()
+            )
+
+        except Exception as e:
+            print(f"Ошибка: {e}")
+            await message.answer("❌ Ошибка загрузки аудио")
+
+    await message.answer("✅ Список завершен")
+
+
 @router.message(StateFilter(MessageStates.waiting_for_message_request))
 async def process_message_request(message: Message, state: FSMContext):
     loading_manager = LoadingMessageManager()
@@ -104,14 +144,13 @@ async def process_message_request(message: Message, state: FSMContext):
         await asyncio.sleep(3)
         await loading_manager.stop()
         await message.answer_voice(voice=voice_file, reply_markup=builder.as_markup())
-        await state.set_state(MessageStates.waiting_for_message_request)
+      #  await state.set_state(MessageStates.waiting_for_message_request)
 
     except Exception as e:
         logging.error(f"Error in process_message_request: {e}")
         await state.clear()
 
-from backend.database.user_db import DatabaseManager
-db_manager = DatabaseManager()
+
 
 @router.callback_query(MessageCallback.filter(F.action == "add"))
 async def add_to_favorites(callback: CallbackQuery):
@@ -153,44 +192,6 @@ async def add_to_favorites(callback: CallbackQuery):
             await callback.answer("Произошла ошибка.")
 
 
-@router.message(F.text == buttons["favorite_messages"])
-async def get_favorites(message: Message):
-    user_id = message.from_user.id
-    user_data = await db_manager.get_user(user_id)
-
-    if not user_data or not user_data["favourite_messages"]:
-        await message.answer("🎵 У вас пока нет избранных аудиозаписей.")
-        return
-
-    await message.answer("🔊 Ваши избранные аудиозаписи:")
-    favourites = user_data["favourite_messages"]
-    print(favourites)
-    for audio_path in favourites:
-        try:
-            folder_name = os.path.basename(os.path.dirname(audio_path))
-            file = FSInputFile(audio_path)
-
-            builder = InlineKeyboardBuilder()
-            builder.row(
-                InlineKeyboardButton(
-                    text="❌Удалить из избранного",
-                    callback_data=MessageCallback(
-                        action="del",
-                        message_file=folder_name
-                    ).pack()
-                )
-            )
-
-            await message.answer_audio(
-                audio=file,
-                reply_markup=builder.as_markup()
-            )
-
-        except Exception as e:
-            print(f"Ошибка: {e}")
-            await message.answer("❌ Ошибка загрузки аудио")
-
-    await message.answer("✅ Список завершен")
 
 
 @router.callback_query(MessageCallback.filter(F.action == "del"))
