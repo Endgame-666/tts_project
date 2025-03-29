@@ -12,7 +12,7 @@ def welcome_message(message):
 buttons = {
     "new_message": "🆕 Новый голос",
     "favorite_messages": "⭐️ Избранные сообщения",
-    "message_history": "📜 История сообщений",
+    "random_voice": "🎲 Случайный голос",
 }
 
 favourite_messages_response = "Избранные сообщения:"

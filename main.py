@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import random
 import sys
 import hashlib
 import json
@@ -85,7 +86,6 @@ async def get_favorites(message: Message):
 
     await message.answer("🔊 Ваши избранные аудиозаписи:")
     favourites = user_data["favourite_messages"]
-    print(favourites)
     for audio_path in favourites:
         try:
             folder_name = os.path.basename(os.path.dirname(audio_path))
@@ -112,6 +112,30 @@ async def get_favorites(message: Message):
             await message.answer("❌ Ошибка загрузки аудио")
 
     await message.answer("✅ Список завершен")
+
+@router.message(F.text == buttons["random_voice"])
+async def process_message_request_random(message: Message, state: FSMContext):
+    CHARACTER_NAMES = {
+        1: "Пудж 🔪⛓️💀",
+        2: "Шрек 💚🤬",
+        3: "Диппер 🧢🔦",
+        4: "Мейбл ✨🦄",
+        5: "Апвоут 💬❔",
+        6: "Дональд Дак 🦆🌊😠",
+        7: "Крош ⚡🐇",
+        8: "Геральт ⚔️🐺",
+        9: "Ургант 📺🎥",
+        0: "🚫❓"
+    }
+    character_id = random.randint(1, 9)
+    await state.update_data(character_id=character_id)
+    await state.set_state(MessageStates.waiting_for_message_request)
+    response = (
+        f"🎰 Рулетка голосов! 🎭\n"
+        f"🎉 Вам попался: <b>{CHARACTER_NAMES.get(character_id, 'уникальный голос')}</b>\n"
+        f"🔊 Погнали озвучивать! Пишите текст для превращения 🎙️➡️🔮"
+    )
+    await message.answer(response)
 
 
 @router.message(StateFilter(MessageStates.waiting_for_message_request))
@@ -144,7 +168,6 @@ async def process_message_request(message: Message, state: FSMContext):
         await asyncio.sleep(3)
         await loading_manager.stop()
         await message.answer_voice(voice=voice_file, reply_markup=builder.as_markup())
-      #  await state.set_state(MessageStates.waiting_for_message_request)
 
     except Exception as e:
         logging.error(f"Error in process_message_request: {e}")
