@@ -1,100 +1,81 @@
-from pymongo import MongoClient
-import certifi
-from typing import Optional, Dict, Any, List
-import datetime
-import hashlib
+import sqlite3
+import json
+from typing import List, Optional
+import aiosqlite
 
+class DataBseManeger:
+    def __init__(self, db_name: str = "bot.db"):
+        self.db_name = db_name
+        self._create_tables()
 
-class MongoDBManager:
-    def __init__(self,
-                 mongo_url: str,
-                 db_name: str = "voice_bot",
-                 collection_name: str = "voice_messages"):
-        self.client = MongoClient(mongo_url, tlsCAFile=certifi.where())
-        self.db = self.client[db_name]
-        self.collection = self.db[collection_name]
+    def _create_tables(self):
+        """Создаем бд если еще нет."""
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
 
-        try:
-            self.client.admin.command('ismaster')
-            print("MongoDB connection successful")
-        except Exception as e:
-            print(f"MongoDB connection failed: {e}")
-            raise
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS users (
+                    user_id INTEGER PRIMARY KEY,
+                    user_name TEXT,
+                    favourite_messages TEXT
+                )
+            ''')
 
-    def generate_message_id(self, audio_path: str) -> str:
-        return hashlib.md5(audio_path.encode()).hexdigest()
+            conn.commit()
 
-    def save_voice_message(self,
-                           user_id: int,
-                           character_id: int,
-                           audio_path: str,
-                           message_text: str) -> str:
-        message_id = self.generate_message_id(audio_path)
+    async def add_user(self, user_id: int, user_name: str) -> bool:
+        """Добавляем нового пользователя, если еще не добавили."""
+        async with aiosqlite.connect(self.db_name) as db:
+            cursor = await db.execute(
+                'SELECT user_id FROM users WHERE user_id = ?',
+                (user_id,)
+            )
+            exists = await cursor.fetchone()
 
-        voice_doc = {
-            "_id": message_id,
-            "user_id": user_id,
-            "character_id": character_id,
-            "audio_path": audio_path,
-            "message_text": message_text,
-            "timestamp": datetime.datetime.now(),
-            "favorite_by": []
-        }
-
-        self.collection.insert_one(voice_doc)
-        return message_id
-
-    def get_voice_message(self, message_id: str) -> Optional[Dict[str, Any]]:
-        return self.collection.find_one({"_id": message_id})
-
-    def get_user_messages(self,
-                          user_id: int,
-                          skip: int = 0,
-                          limit: int = 10) -> tuple[List[Dict[str, Any]], bool]:
-        total = self.collection.count_documents({"user_id": user_id})
-
-        cursor = self.collection.find({"user_id": user_id}) \
-            .sort("timestamp", -1) \
-            .skip(skip) \
-            .limit(limit)
-
-        messages = list(cursor)
-        has_more = total > skip + limit
-
-        return messages, has_more
-
-    def toggle_favorite(self, message_id: str, user_id: int) -> bool:
-        message = self.collection.find_one({"_id": message_id})
-        if not message:
+            if not exists:
+                await db.execute('''
+                    INSERT INTO users (
+                        user_id, user_name, favourite_messages
+                    ) VALUES (?, ?, ?)
+                ''', (
+                    user_id, user_name,
+                    json.dumps([])
+                ))
+                await db.commit()
+                return True
             return False
 
-        if user_id in message['favorite_by']:
-            self.collection.update_one(
-                {"_id": message_id},
-                {"$pull": {"favorite_by": user_id}}
+    async def get_user(self, user_id: int) -> Optional[dict]:
+        """Берем данные пользователя через user_id."""
+        async with aiosqlite.connect(self.db_name) as db:
+            cursor = await db.execute(
+                'SELECT * FROM users WHERE user_id = ?',
+                (user_id,)
             )
-            return False
-        else:
-            self.collection.update_one(
-                {"_id": message_id},
-                {"$push": {"favorite_by": user_id}}
+            user = await cursor.fetchone()
+
+            if user:
+                column_names = [description[0] for description in cursor.description]
+                user_dict = dict(zip(column_names, user))
+                user_dict['favourite_messages'] = json.loads(user_dict['favourite_messages'])
+                return user_dict
+            return None
+
+    async def update_favourite_recipes(self, user_id: int, message_file: str):
+        """Добавляем сообщение в избранное."""
+        async with aiosqlite.connect(self.db_name) as db:
+            cursor = await db.execute(
+                'SELECT favourite_messages FROM users WHERE user_id = ?',
+                (user_id,)
             )
-            return True
+            favourites_json = await cursor.fetchone()
 
-    def is_favorite(self, message_id: str, user_id: int) -> bool:
-        message = self.collection.find_one({"_id": message_id})
-        return message and user_id in message.get('favorite_by', [])
-
-    def get_user_favorites(self, user_id: int) -> List[Dict[str, Any]]:
-        return list(self.collection.find({"favorite_by": user_id}))
-
-    def get_character_messages(self,
-                               user_id: int,
-                               character_id: int) -> List[Dict[str, Any]]:
-        return list(self.collection.find({
-            "user_id": user_id,
-            "character_id": character_id
-        }).sort("timestamp", -1))
-
-    def close(self):
-        self.client.close()
+            if favourites_json:
+                favourites = json.loads(favourites_json[0])
+                if message_file not in favourites:
+                    favourites.append(message_file)
+                    await db.execute(
+                        'UPDATE users SET favourite_messages = ? WHERE user_id = ?',
+                        (json.dumps(favourites), user_id)
+                    )
+                    await db.commit()
