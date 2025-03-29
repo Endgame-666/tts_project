@@ -139,7 +139,7 @@ async def add_to_favorites(callback: CallbackQuery):
         favourites = user_data["favourite_messages"]
 
         if len(favourites) >= 5 and file not in favourites:
-            await callback.answer("Нельзя добавить больше 5 сообщений.")
+            await callback.answer("⛔️ Лимит избранного превышен!")
             return
 
         if file in favourites:
@@ -147,7 +147,7 @@ async def add_to_favorites(callback: CallbackQuery):
             return
 
         try:
-            await db_manager.update_favourite_recipes(user_id, file)
+            await db_manager.update_favourite_messages(user_id, file)
             await callback.answer("Сообщение добавлено в избранное!")
         except Exception as e:
             print(f"Ошибка: {e}")
@@ -174,7 +174,7 @@ async def get_favorites(message: Message):
             builder = InlineKeyboardBuilder()
             builder.row(
                 InlineKeyboardButton(
-                    text="❌ Удалить",
+                    text="❌Удалить из избранного",
                     callback_data=MessageCallback(
                         action="del",
                         message_file=folder_name
@@ -203,12 +203,12 @@ async def remove_from_favorites(
     user_data = await db_manager.get_user(user_id)
     file_id = callback_data.message_file
     target_path = fr"C:\Users\Вадим\AppData\Local\Temp\gradio\{file_id}\audio.wav"
-    print(user_data["favourite_messages"])
-    success = await db_manager.remove_from_favourites(user_id, target_path)
-    print(user_data["favourite_messages"])
-    await callback.message.delete()
+
+    await db_manager.remove_from_favourites(user_id, target_path)
     await callback.answer("✅ Удалено из избранного")
- 
+    await callback.message.delete()
+
+
 
 async def main() -> None:
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))

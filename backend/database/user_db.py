@@ -61,7 +61,7 @@ class DatabaseManager:
                 return user_dict
             return None
 
-    async def update_favourite_recipes(self, user_id: int, message_file: str):
+    async def update_favourite_messages(self, user_id: int, message_file: str):
         """Добавляем сообщение в избранное."""
         async with aiosqlite.connect(self.db_name) as db:
             cursor = await db.execute(
