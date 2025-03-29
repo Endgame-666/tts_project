@@ -35,7 +35,7 @@ async def cmd_start(message: Message):
     await message.answer(welcome_message(message), reply_markup=keyboard)
 
 
-@router.message(lambda message: message.web_app_data)
+@router.message(F.web_app_data.is_not(None))
 async def new_message_request(message: Message, state: FSMContext):
     web_data = message.web_app_data.data if message.web_app_data else None
     if web_data:
@@ -71,6 +71,8 @@ async def new_message_request(message: Message, state: FSMContext):
     else:
         response = "🔍 Вы пока не сделали выбор. Нажмите кнопку ниже! 👇"
     await message.answer(response)
+
+
 
 def generate_safe_id(input_string: str) -> str:
     return hashlib.md5(input_string.encode()).hexdigest()
@@ -231,7 +233,9 @@ async def remove_from_favorites(
     await callback.answer("✅ Удалено из избранного")
     await callback.message.delete()
 
-
+@router.message()
+async def handle_unknown(message: Message):
+    await message.answer("🔍 Вы пока не сделали выбор. Нажмите на кнопки ниже! 👇")
 
 async def main() -> None:
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
