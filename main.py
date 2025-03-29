@@ -104,8 +104,7 @@ async def process_message_request(message: Message, state: FSMContext):
         await asyncio.sleep(3)
         await loading_manager.stop()
         await message.answer_voice(voice=voice_file, reply_markup=builder.as_markup())
-        await state.clear()
-   #     await state.set_state(MessageStates.waiting_for_message_request)
+        await state.set_state(MessageStates.waiting_for_message_request)
 
     except Exception as e:
         logging.error(f"Error in process_message_request: {e}")
