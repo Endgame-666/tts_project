@@ -13,6 +13,7 @@ from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup, InlineKe
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import Command, StateFilter
 from aiogram.types import FSInputFile
+from aiogram import F
 
 # files
 from bot.loading_messages import LoadingMessageManager
@@ -95,7 +96,7 @@ async def process_message_request(message: Message, state: FSMContext):
         builder = InlineKeyboardBuilder()
         builder.row(
             InlineKeyboardButton(
-                text="Добавить в избранное",
+                text="⭐️Добавить в избранное",
                 callback_data=MessageCallback(action="add", message_file=folder_name).pack()
             )
         )
@@ -148,6 +149,43 @@ async def add_to_favorites(callback: CallbackQuery):
     except Exception as e:
         print(f"Ошибка: {e}")
         await callback.answer("Произошла ошибка.")
+
+@router.message(F.text == buttons["favorite_messages"])
+async def get_favorites(message: Message):
+    """Отправляет пользователю его избранные аудиозаписи."""
+    user_id = message.from_user.id
+    user_data = await db_manager.get_user(user_id)
+
+    if not user_data or not user_data["favourite_messages"]:
+        await message.answer("У вас пока нет избранных аудиозаписей.")
+        return
+
+    await message.answer("🎧 Ваши избранные аудиозаписи:")
+
+    favourites = user_data["favourite_messages"]
+    print(favourites)
+    for audio_file in favourites:
+        try:
+            audio_file = FSInputFile(audio_file)
+            builder = InlineKeyboardBuilder()
+            builder.row(
+                InlineKeyboardButton(
+                    text="❌Убрать из избранного",
+                    callback_data=MessageCallback(action="add", message_file="").pack()
+                )
+            )
+            await message.answer_audio(
+                audio=audio_file
+            )
+
+        except Exception as e:
+            print(f"Ошибка обработки записи: {e}")
+            await message.answer(f"❌ Ошибка загрузки аудиозаписи")
+
+    await message.answer("🔚 Список завершен")
+
+
+
 
 
 async def main() -> None:
