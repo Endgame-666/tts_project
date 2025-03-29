@@ -104,6 +104,35 @@ voices: dict[int, ModelParams] = {
         "method": "rmvpe",
         "index_rate": 0,
         "protect": 0
+    },
+    10: {
+        "name": "ВладимирПутин",
+        "speed": 0,
+        "input_text": "",
+        "edge_voice": "ru-RU-DmitryNeural-Male",
+        "transpose": 0,
+        "method": "rmvpe",
+        "index_rate": 1,
+        "protect": 0.33
+    },
+    11: {
+        "name": "Пангольер",
+        "speed": 0,
+        "input_text": "",
+        "edge_voice": "ru-RU-DmitryNeural-Male",
+        "transpose": 0,
+        "method": "rmvpe",
+        "index_rate": 0,
+        "protect": 0
+    },
+    12: {
+        "name": "Цмка",
+        "speed": 0,
+        "input_text": "",
+        "edge_voice": "ru-RU-SvetlanaNeural-Female",
+        "transpose": 6.5,
+        "method": "rmvpe",
+        "index_rate": 1,
+        "protect": 0
     }
-
 }

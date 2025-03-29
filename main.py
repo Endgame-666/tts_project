@@ -10,7 +10,8 @@ import os
 from aiogram import Bot, Dispatcher, Router
 from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
-from aiogram.types import Message, KeyboardButton, ReplyKeyboardMarkup, InlineKeyboardButton, InlineKeyboardMarkup, CallbackQuery
+from aiogram.types import InlineKeyboardButton, CallbackQuery, Message
+from aiogram.fsm.context import FSMContext
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 from aiogram.filters import Command, StateFilter
 from aiogram.types import FSInputFile
@@ -18,11 +19,12 @@ from aiogram import F
 
 # files
 from bot.loading_messages import LoadingMessageManager
-from bot.keyboards.main_keyboard import get_main_keyboard
+from bot.main_keyboard import get_main_keyboard
 from bot.settings import BOT_TOKEN
 from bot.filters import *
 from TTS.tts import get_voice
 from backend.database.user_db import DatabaseManager
+from bot.texts import *
 
 db_manager = DatabaseManager()
 dp = Dispatcher()
@@ -37,6 +39,7 @@ async def cmd_start(message: Message):
 
 @router.message(F.web_app_data.is_not(None))
 async def new_message_request(message: Message, state: FSMContext):
+    """Получение данных с mini app о выбранном голосе"""
     web_data = message.web_app_data.data if message.web_app_data else None
     if web_data:
         try:
@@ -45,19 +48,6 @@ async def new_message_request(message: Message, state: FSMContext):
 
             await state.update_data(character_id=character_id)
             await state.set_state(MessageStates.waiting_for_message_request)
-
-            CHARACTER_NAMES = {
-                1: "Пудж 🔪⛓️💀",
-                2: "Шрек 💚🤬",
-                3: "Диппер 🧢🔦",
-                4: "Мейбл ✨🦄",
-                5: "Апвоут 💬❔",
-                6: "Дональд Дак 🦆🌊😠",
-                7: "Крош ⚡🐇",
-                8: "Геральт ⚔️🐺",
-                9: "Ургант 📺🎥",
-                0: "🚫❓"
-            }
 
             response = (
                 f"🎉 Отличный выбор! 🎭\n"
@@ -69,7 +59,7 @@ async def new_message_request(message: Message, state: FSMContext):
         except json.JSONDecodeError:
             response = "⚠️ Ошибка обработки выбора. Попробуйте еще раз!"
     else:
-        response = "🔍 Вы пока не сделали выбор. Нажмите кнопку ниже! 👇"
+        response = didnt_choose_text
     await message.answer(response)
 
 
@@ -79,14 +69,15 @@ def generate_safe_id(input_string: str) -> str:
 
 @router.message(F.text == buttons["favorite_messages"] )
 async def get_favorites(message: Message):
+    """Показать избранные сообщения"""
     user_id = message.from_user.id
     user_data = await db_manager.get_user(user_id)
 
     if not user_data or not user_data["favourite_messages"]:
-        await message.answer("🎵 У вас пока нет избранных аудиозаписей.")
+        await message.answer(no_favorite_list_text)
         return
 
-    await message.answer("🔊 Ваши избранные аудиозаписи:")
+    await message.answer(favorite_list_text)
     favourites = user_data["favourite_messages"]
     for audio_path in favourites:
         try:
@@ -96,7 +87,7 @@ async def get_favorites(message: Message):
             builder = InlineKeyboardBuilder()
             builder.row(
                 InlineKeyboardButton(
-                    text="❌Удалить из избранного",
+                    text=del_from_favorites_text,
                     callback_data=MessageCallback(
                         action="del",
                         message_file=folder_name
@@ -113,22 +104,12 @@ async def get_favorites(message: Message):
             print(f"Ошибка: {e}")
             await message.answer("❌ Ошибка загрузки аудио")
 
-    await message.answer("✅ Список завершен")
+    await message.answer(favorite_list_end_text)
+
 
 @router.message(F.text == buttons["random_voice"])
 async def process_message_request_random(message: Message, state: FSMContext):
-    CHARACTER_NAMES = {
-        1: "Пудж 🔪⛓️💀",
-        2: "Шрек 💚🤬",
-        3: "Диппер 🧢🔦",
-        4: "Мейбл ✨🦄",
-        5: "Апвоут 💬❔",
-        6: "Дональд Дак 🦆🌊😠",
-        7: "Крош ⚡🐇",
-        8: "Геральт ⚔️🐺",
-        9: "Ургант 📺🎥",
-        0: "🚫❓"
-    }
+    """Выбрать голос случайным образом"""
     character_id = random.randint(1, 9)
     await state.update_data(character_id=character_id)
     await state.set_state(MessageStates.waiting_for_message_request)
@@ -142,8 +123,9 @@ async def process_message_request_random(message: Message, state: FSMContext):
 
 @router.message(StateFilter(MessageStates.waiting_for_message_request))
 async def process_message_request(message: Message, state: FSMContext):
+    """Главная функция, возвращает голосовое сообщение выбранным голосом"""
     loading_manager = LoadingMessageManager()
-    loading_message = await message.answer("⏳ Начинаю обработку...")
+    loading_message = await message.answer(start_working_text)
     await loading_manager.start(loading_message)
 
     data = await state.get_data()
@@ -162,7 +144,7 @@ async def process_message_request(message: Message, state: FSMContext):
         builder = InlineKeyboardBuilder()
         builder.row(
             InlineKeyboardButton(
-                text="⭐️Добавить в избранное",
+                text=add_to_favorite_text,
                 callback_data=MessageCallback(action="add", message_file=folder_name).pack()
             )
         )
@@ -172,14 +154,14 @@ async def process_message_request(message: Message, state: FSMContext):
         await message.answer_voice(voice=voice_file, reply_markup=builder.as_markup())
 
     except Exception as e:
-        logging.error(f"Error in process_message_request: {e}")
+        logging.error(f"Ошибка: {e}")
         await state.clear()
 
 
 
 @router.callback_query(MessageCallback.filter(F.action == "add"))
 async def add_to_favorites(callback: CallbackQuery):
-
+    """Добавляет в избранное сообщение"""
     if callback.data.split(":")[1] == "add":
         user_id = callback.from_user.id
         try:
@@ -202,16 +184,16 @@ async def add_to_favorites(callback: CallbackQuery):
         favourites = user_data["favourite_messages"]
 
         if len(favourites) >= 5 and file not in favourites:
-            await callback.answer("⛔️ Лимит избранного превышен!")
+            await callback.answer(limit_favorite_text)
             return
 
         if file in favourites:
-            await callback.answer("Сообщение уже в избранном!")
+            await callback.answer(already_in_favorite_text)
             return
 
         try:
             await db_manager.update_favourite_messages(user_id, file)
-            await callback.answer("Сообщение добавлено в избранное!")
+            await callback.answer(favorite_msg_done_text)
         except Exception as e:
             print(f"Ошибка: {e}")
             await callback.answer("Произошла ошибка.")
@@ -224,18 +206,20 @@ async def remove_from_favorites(
         callback: CallbackQuery,
         callback_data: MessageCallback
 ):
+    """Удаляет сообщение из избранного"""
     user_id = callback.from_user.id
     user_data = await db_manager.get_user(user_id)
     file_id = callback_data.message_file
     target_path = fr"C:\Users\Вадим\AppData\Local\Temp\gradio\{file_id}\audio.wav"
 
     await db_manager.remove_from_favourites(user_id, target_path)
-    await callback.answer("✅ Удалено из избранного")
+    await callback.answer(deleted_from_favorite_text)
     await callback.message.delete()
 
 @router.message()
 async def handle_unknown(message: Message):
-    await message.answer("🔍 Вы пока не сделали выбор. Нажмите на кнопки ниже! 👇")
+    """Когда еще ничего не выбрали"""
+    await message.answer(didnt_choose_text)
 
 async def main() -> None:
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))

@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from typing import List, Optional
+from typing import Optional
 import aiosqlite
 
 class DatabaseManager:
@@ -9,7 +9,7 @@ class DatabaseManager:
         self._create_tables()
 
     def _create_tables(self):
-        """Создаем бд если еще нет."""
+        """Создаем бд если еще нет"""
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
 
@@ -24,7 +24,7 @@ class DatabaseManager:
             conn.commit()
 
     async def add_user(self, user_id: int, user_name: str) -> bool:
-        """Добавляем нового пользователя, если еще не добавили."""
+        """Добавляем нового пользователя, если еще не добавили"""
         async with aiosqlite.connect(self.db_name) as db:
             cursor = await db.execute(
                 'SELECT user_id FROM users WHERE user_id = ?',
@@ -46,7 +46,7 @@ class DatabaseManager:
             return False
 
     async def get_user(self, user_id: int) -> Optional[dict]:
-        """Берем данные пользователя через user_id."""
+        """Берем данные пользователя через user_id"""
         async with aiosqlite.connect(self.db_name) as db:
             cursor = await db.execute(
                 'SELECT * FROM users WHERE user_id = ?',
@@ -62,7 +62,7 @@ class DatabaseManager:
             return None
 
     async def update_favourite_messages(self, user_id: int, message_file: str):
-        """Добавляем сообщение в избранное."""
+        """Добавляем сообщение в избранное"""
         async with aiosqlite.connect(self.db_name) as db:
             cursor = await db.execute(
                 'SELECT favourite_messages FROM users WHERE user_id = ?',
@@ -81,9 +81,8 @@ class DatabaseManager:
                     await db.commit()
 
     async def remove_from_favourites(self, user_id: int, file_path: str):
-        """Удаляет сообщение из избранного."""
+        """Удаляет сообщение из избранного"""
         async with aiosqlite.connect(self.db_name) as db:
-            # Получаем текущие избранные сообщения
             cursor = await db.execute(
                 'SELECT favourite_messages FROM users WHERE user_id = ?',
                 (user_id,)
@@ -91,14 +90,12 @@ class DatabaseManager:
             result = await cursor.fetchone()
 
             if not result or not result[0]:
-                return  # Нет пользователя или пустой список
+                return
 
-            # Десериализуем и удаляем файл
             favourites = json.loads(result[0])
             if file_path in favourites:
                 favourites.remove(file_path)
 
-                # Обновляем запись в базе
                 await db.execute(
                     'UPDATE users SET favourite_messages = ? WHERE user_id = ?',
                     (json.dumps(favourites), user_id)
