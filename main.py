@@ -104,7 +104,8 @@ async def process_message_request(message: Message, state: FSMContext):
         await asyncio.sleep(3)
         await loading_manager.stop()
         await message.answer_voice(voice=voice_file, reply_markup=builder.as_markup())
-        await state.set_state(MessageStates.waiting_for_message_request)
+        await state.clear()
+   #     await state.set_state(MessageStates.waiting_for_message_request)
 
     except Exception as e:
         logging.error(f"Error in process_message_request: {e}")
@@ -113,80 +114,101 @@ async def process_message_request(message: Message, state: FSMContext):
 from backend.database.user_db import DatabaseManager
 db_manager = DatabaseManager()
 
-@router.callback_query(MessageCallback.filter())
+@router.callback_query(MessageCallback.filter(F.action == "add"))
 async def add_to_favorites(callback: CallbackQuery):
-    user_id = callback.from_user.id
-    try:
-        message_file = callback.data.split(":")[2]
-    except IndexError:
-        await callback.answer("Ошибка в данных сообщения.")
-        return
 
-    file = fr"C:\Users\Вадим\AppData\Local\Temp\gradio\{message_file}\audio.wav"
-
-    user_data = await db_manager.get_user(user_id)
-    if not user_data:
-        user_name = callback.from_user.full_name or "Unknown"
-        added = await db_manager.add_user(user_id, user_name)
-        if not added:
-            await callback.answer("Ошибка при создании пользователя.")
+    if callback.data.split(":")[1] == "add":
+        user_id = callback.from_user.id
+        try:
+            message_file = callback.data.split(":")[2]
+        except IndexError:
+            await callback.answer("Ошибка в данных сообщения.")
             return
+
+        file = fr"C:\Users\Вадим\AppData\Local\Temp\gradio\{message_file}\audio.wav"
+
         user_data = await db_manager.get_user(user_id)
+        if not user_data:
+            user_name = callback.from_user.full_name or "Unknown"
+            added = await db_manager.add_user(user_id, user_name)
+            if not added:
+                await callback.answer("Ошибка при создании пользователя.")
+                return
+            user_data = await db_manager.get_user(user_id)
 
-    favourites = user_data["favourite_messages"]
+        favourites = user_data["favourite_messages"]
 
-    if len(favourites) > 5 and file not in favourites:
-        await callback.answer("Нельзя добавить больше 5 сообщений.")
-        return
+        if len(favourites) >= 5 and file not in favourites:
+            await callback.answer("Нельзя добавить больше 5 сообщений.")
+            return
 
-    if file in favourites:
-        await callback.answer("Сообщение уже в избранном!")
-        return
+        if file in favourites:
+            await callback.answer("Сообщение уже в избранном!")
+            return
 
-    try:
-        await db_manager.update_favourite_recipes(user_id, file)
-        await callback.answer("Сообщение добавлено в избранное!")
-    except Exception as e:
-        print(f"Ошибка: {e}")
-        await callback.answer("Произошла ошибка.")
+        try:
+            await db_manager.update_favourite_recipes(user_id, file)
+            await callback.answer("Сообщение добавлено в избранное!")
+        except Exception as e:
+            print(f"Ошибка: {e}")
+            await callback.answer("Произошла ошибка.")
+
 
 @router.message(F.text == buttons["favorite_messages"])
 async def get_favorites(message: Message):
-    """Отправляет пользователю его избранные аудиозаписи."""
     user_id = message.from_user.id
     user_data = await db_manager.get_user(user_id)
 
     if not user_data or not user_data["favourite_messages"]:
-        await message.answer("У вас пока нет избранных аудиозаписей.")
+        await message.answer("🎵 У вас пока нет избранных аудиозаписей.")
         return
 
-    await message.answer("🎧 Ваши избранные аудиозаписи:")
-
+    await message.answer("🔊 Ваши избранные аудиозаписи:")
     favourites = user_data["favourite_messages"]
     print(favourites)
-    for audio_file in favourites:
+    for audio_path in favourites:
         try:
-            audio_file = FSInputFile(audio_file)
+            folder_name = os.path.basename(os.path.dirname(audio_path))
+            file = FSInputFile(audio_path)
+
             builder = InlineKeyboardBuilder()
             builder.row(
                 InlineKeyboardButton(
-                    text="❌Убрать из избранного",
-                    callback_data=MessageCallback(action="add", message_file="").pack()
+                    text="❌ Удалить",
+                    callback_data=MessageCallback(
+                        action="del",
+                        message_file=folder_name
+                    ).pack()
                 )
             )
+
             await message.answer_audio(
-                audio=audio_file
+                audio=file,
+                reply_markup=builder.as_markup()
             )
 
         except Exception as e:
-            print(f"Ошибка обработки записи: {e}")
-            await message.answer(f"❌ Ошибка загрузки аудиозаписи")
+            print(f"Ошибка: {e}")
+            await message.answer("❌ Ошибка загрузки аудио")
 
-    await message.answer("🔚 Список завершен")
-
-
+    await message.answer("✅ Список завершен")
 
 
+@router.callback_query(MessageCallback.filter(F.action == "del"))
+async def remove_from_favorites(
+        callback: CallbackQuery,
+        callback_data: MessageCallback
+):
+    user_id = callback.from_user.id
+    user_data = await db_manager.get_user(user_id)
+    file_id = callback_data.message_file
+    target_path = fr"C:\Users\Вадим\AppData\Local\Temp\gradio\{file_id}\audio.wav"
+    print(user_data["favourite_messages"])
+    success = await db_manager.remove_from_favourites(user_id, target_path)
+    print(user_data["favourite_messages"])
+    await callback.message.delete()
+    await callback.answer("✅ Удалено из избранного")
+ 
 
 async def main() -> None:
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))

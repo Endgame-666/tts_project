@@ -79,3 +79,28 @@ class DatabaseManager:
                         (json.dumps(favourites), user_id)
                     )
                     await db.commit()
+
+    async def remove_from_favourites(self, user_id: int, file_path: str):
+        """Удаляет сообщение из избранного."""
+        async with aiosqlite.connect(self.db_name) as db:
+            # Получаем текущие избранные сообщения
+            cursor = await db.execute(
+                'SELECT favourite_messages FROM users WHERE user_id = ?',
+                (user_id,)
+            )
+            result = await cursor.fetchone()
+
+            if not result or not result[0]:
+                return  # Нет пользователя или пустой список
+
+            # Десериализуем и удаляем файл
+            favourites = json.loads(result[0])
+            if file_path in favourites:
+                favourites.remove(file_path)
+
+                # Обновляем запись в базе
+                await db.execute(
+                    'UPDATE users SET favourite_messages = ? WHERE user_id = ?',
+                    (json.dumps(favourites), user_id)
+                )
+                await db.commit()
