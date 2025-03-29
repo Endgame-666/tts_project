@@ -8,7 +8,7 @@ from aiogram.filters import Filter
 
 class MessageCallback(CallbackData, prefix="favorite"):
     action: str
-    message_id: str
+    message_file: str
 
 
 

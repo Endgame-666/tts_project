@@ -1,107 +1,66 @@
-from aiogram.filters.callback_data import CallbackData
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from database.database import MongoDBManager  # Замените на ваш модуль БД
+from aiogram import Router, types
+from aiogram.filters import Command
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+from aiogram.fsm.context import FSMContext
+import asyncio
+import logging
+import json
+from database.user_db import DatabaseManager
+
+router = Router()
+
+db_manager = DatabaseManager()
 
 
-class VoiceMessageCallback(CallbackData, prefix="voice_msg"):
-    action: str  # "add", "remove", "view"
-    message_id: str
+@router.message(Command("favorites"))
+async def get_favorites(message: types.Message):
+    """Получает список избранных сообщений пользователя."""
+    user_id = message.from_user.id
+    user_data = await db_manager.get_user(user_id)
+
+    if not user_data or not user_data["favourite_messages"]:
+        await message.answer("У вас пока нет избранных сообщений.")
+        return
+
+    text = "Ваши избранные сообщения:\n" + "\n".join(user_data["favourite_messages"])
+    await message.answer(text)
 
 
-class FavoriteHandler:
-    def __init__(self):
-        mongo_url = "your_mongo_connection_string"
-        self.db = MongoDBManager(
-            mongo_url=mongo_url,
-            db_name="voice_bot",
-            collection_name="favorites"
-        )
-
-    async def toggle_favorite(self, user_id: int, message_id: str) -> bool:
-        """Добавляет/удаляет сообщение из избранного"""
-        user_favorites = await self.get_favorites(user_id)
-
-        if message_id in user_favorites:
-            await self.db.delete_one(
-                {"user_id": user_id},
-                {"$pull": {"favorites": message_id}}
-            )
-            return False
-        else:
-            await self.db.update_one(
-                {"user_id": user_id},
-                {"$addToSet": {"favorites": message_id}},
-                upsert=True
-            )
-            return True
-
-    async def get_favorites(self, user_id: int) -> list:
-        """Возвращает список избранных сообщений пользователя"""
-        result = await self.db.find_one({"user_id": user_id})
-        return result.get("favorites", []) if result else []
-
-    async def is_favorite(self, user_id: int, message_id: str) -> bool:
-        """Проверяет, есть ли сообщение в избранном"""
-        return message_id in await self.get_favorites(user_id)
-
-
-# Инициализация хэндлера
-favorite_handler = FavoriteHandler()
-
-
-@router.callback_query(VoiceMessageCallback.filter())
-async def handle_favorites(callback: CallbackQuery,
-                           callback_data: VoiceMessageCallback):
+@router.callback_query(lambda c: c.data.startswith("add_favorite"))
+async def add_to_favorites(callback: types.CallbackQuery):
+    """Добавляет сообщение в избранное пользователя, если лимит не превышен."""
     user_id = callback.from_user.id
-    message_id = callback_data.message_id
+    message_id = callback.data.split(":")[1]
 
-    if callback_data.action == "add":
-        # Добавление в избранное
-        is_favorite = await favorite_handler.toggle_favorite(user_id, message_id)
-        text = "✅ Добавлено в избранное!" if is_favorite else "❌ Удалено из избранного"
-        await callback.answer(text)
+    user_data = await db_manager.get_user(user_id)
+    favourites = user_data["favourite_messages"] if user_data else []
 
-    elif callback_data.action == "view":
-        # Просмотр избранного
-        favorites = await favorite_handler.get_favorites(user_id)
-        if not favorites:
-            await callback.answer("📭 Список избранного пуст")
-            return
+    if len(favourites) >= 5:
+        await callback.answer("Вы не можете добавить больше 5 избранных сообщений.")
+        return
 
-        # Отправка первого сообщения из списка
-        first_message_id = favorites[0]
-        await send_favorite_message(callback.message, first_message_id)
+    if message_id in favourites:
+        await callback.answer("Это сообщение уже в избранном!")
+        return
 
-    # Обновляем клавиатуру
-    await update_message_keyboard(callback.message, message_id, user_id)
+    await db_manager.update_favourite_recipes(user_id, message_id)
+    await callback.answer("Сообщение добавлено в избранное!")
 
 
-async def send_favorite_message(message: Message, message_id: str):
-    # Ваша логика получения и отправки сообщения по ID
-    # Например:
-    voice_data = await get_voice_message_from_db(message_id)
-    await message.answer_voice(voice_data['file_id'])
+@router.callback_query(lambda c: c.data.startswith("remove_favorite"))
+async def remove_from_favorites(callback: types.CallbackQuery):
+    """Удаляет сообщение из избранного."""
+    user_id = callback.from_user.id
+    message_id = callback.data.split(":")[1]
 
+    user_data = await db_manager.get_user(user_id)
+    favourites = user_data["favourite_messages"] if user_data else []
 
-async def update_message_keyboard(message: Message, message_id: str, user_id: int):
-    is_favorite = await favorite_handler.is_favorite(user_id, message_id)
-    button_text = "❌ Удалить из избранного" if is_favorite else "⭐️ В избранное"
+    if message_id not in favourites:
+        await callback.answer("Этого сообщения нет в избранном.")
+        return
 
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[
-        [InlineKeyboardButton(
-            text=button_text,
-            callback_data=VoiceMessageCallback(
-                action="add",
-                message_id=message_id
-            ).pack()
-        )],
-        [InlineKeyboardButton(
-            text="📂 Показать избранное",
-            callback_data=VoiceMessageCallback(
-                action="view",
-                message_id="0"
-            ).pack()
-        )]
-    ])
-
-    await message.edit_reply_markup(reply_markup=keyboard)
+    favourites.remove(message_id)
+    await db_manager.update_favourite_recipes(user_id, json.dumps(favourites))
+    await callback.answer("Сообщение удалено из избранного!")

@@ -3,6 +3,7 @@ import logging
 import sys
 import hashlib
 import json
+import os
 
 # aiogram
 from aiogram import Bot, Dispatcher, Router
@@ -89,13 +90,13 @@ async def process_message_request(message: Message, state: FSMContext):
         audio_path = fr"{audio}"
         voice_file = FSInputFile(audio_path)
 
+        folder_name = os.path.basename(os.path.dirname(audio_path))
         message_id = generate_safe_id(audio_path)
-
         builder = InlineKeyboardBuilder()
         builder.row(
             InlineKeyboardButton(
                 text="Добавить в избранное",
-                callback_data=MessageCallback(action="add", message_id=message_id).pack()
+                callback_data=MessageCallback(action="add", message_file=folder_name).pack()
             )
         )
 
@@ -108,21 +109,45 @@ async def process_message_request(message: Message, state: FSMContext):
         logging.error(f"Error in process_message_request: {e}")
         await state.clear()
 
+from backend.database.user_db import DatabaseManager
+db_manager = DatabaseManager()
 
 @router.callback_query(MessageCallback.filter())
-async def add_to_favorites(callback: CallbackQuery, callback_data: MessageCallback):
-    if callback_data.action == "add":
-        user_id = callback.from_user.id
-        message_id = callback_data.message_id
+async def add_to_favorites(callback: CallbackQuery):
+    user_id = callback.from_user.id
+    try:
+        message_file = callback.data.split(":")[2]
+    except IndexError:
+        await callback.answer("Ошибка в данных сообщения.")
+        return
 
-        if user_id not in data:
-            data[user_id] = []
+    file = fr"C:\Users\Вадим\AppData\Local\Temp\gradio\{message_file}\audio.wav"
 
-        if message_id not in data[user_id]:
-            data[user_id].append(message_id)
-            await callback.answer("Добавлено в избранное!")
-        else:
-            await callback.answer("Уже в избранном!")
+    user_data = await db_manager.get_user(user_id)
+    if not user_data:
+        user_name = callback.from_user.full_name or "Unknown"
+        added = await db_manager.add_user(user_id, user_name)
+        if not added:
+            await callback.answer("Ошибка при создании пользователя.")
+            return
+        user_data = await db_manager.get_user(user_id)
+
+    favourites = user_data["favourite_messages"]
+
+    if len(favourites) > 5 and file not in favourites:
+        await callback.answer("Нельзя добавить больше 5 сообщений.")
+        return
+
+    if file in favourites:
+        await callback.answer("Сообщение уже в избранном!")
+        return
+
+    try:
+        await db_manager.update_favourite_recipes(user_id, file)
+        await callback.answer("Сообщение добавлено в избранное!")
+    except Exception as e:
+        print(f"Ошибка: {e}")
+        await callback.answer("Произошла ошибка.")
 
 
 async def main() -> None:

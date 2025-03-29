@@ -3,7 +3,7 @@ import json
 from typing import List, Optional
 import aiosqlite
 
-class DataBseManeger:
+class DatabaseManager:
     def __init__(self, db_name: str = "bot.db"):
         self.db_name = db_name
         self._create_tables()
