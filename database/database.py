@@ -1,2 +1,0 @@
-data = {} # <--
-voice_data = {}

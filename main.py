@@ -19,7 +19,7 @@ from bot.keyboards.main_keyboard import get_main_keyboard
 from bot.settings import BOT_TOKEN
 from bot.filters import *
 from TTS.tts import get_voice
-from database.database import *
+#rom database.database import *
 
 
 dp = Dispatcher()
