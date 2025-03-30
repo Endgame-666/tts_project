@@ -110,7 +110,7 @@ async def get_favorites(message: Message):
 @router.message(F.text == buttons["random_voice"])
 async def process_message_request_random(message: Message, state: FSMContext):
     """Выбрать голос случайным образом"""
-    character_id = random.randint(1, 9)
+    character_id = random.randint(1, 12)
     await state.update_data(character_id=character_id)
     await state.set_state(MessageStates.waiting_for_message_request)
     response = (
