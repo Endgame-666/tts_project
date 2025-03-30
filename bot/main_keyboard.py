@@ -6,7 +6,7 @@ from aiogram.types.web_app_info import WebAppInfo
 def get_main_keyboard():
     builder = ReplyKeyboardBuilder()
     builder.button(text=buttons["new_message"],
-                   web_app=WebAppInfo(url="https://endgame-666.github.io/tts_project/"))
+                   web_app=WebAppInfo(url="https://github.com/Endgame-666/web_app_test"))
     builder.button(text=buttons["favorite_messages"])
     builder.button(text=buttons["random_voice"])
     builder.adjust(2)

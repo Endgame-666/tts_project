@@ -125,3 +125,125 @@
             background-color: #34495E;
             box-shadow: 0 2px 6px rgba(0,0,0,0.15);
         }
+        /* Секция избранных */
+        .favorites-section {
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 35px;
+            display: none;
+            padding: 0 10px;
+        }
+
+        .favorites-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+
+        .favorites-header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 0 10px;
+        }
+
+        .favorites-title {
+            color: #E67E22;
+            background: linear-gradient(90deg, #E67E22, #FFA500);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            font-size: 1.6em;
+            margin: 0;
+            padding: 0 15px;
+            text-align: center;
+            transition: transform 0.3s;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .favorites-title:hover {
+            transform: scale(1.05);
+            text-shadow: 0 2px 4px rgba(230, 126, 34, 0.2);
+        }
+
+        .favorite-card {
+            display: inline-block;
+            width: 110px;
+            margin-right: 15px;
+            margin-bottom: 25px;
+            vertical-align: top;
+            background: #FFFFFF;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+
+        .favorite-card:hover {
+            transform: translateY(-3px);
+        }
+
+        .favorite-card:last-child {
+            margin-right: 0;
+        }
+
+        .favorite-image {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-bottom: 2px solid #eee;
+        }
+
+        .favorite-name {
+            font-size: 1.3em;
+            padding: 8px;
+            text-align: center;
+            white-space: normal;
+            margin: 0;
+            color: #2C3E50;
+        }
+
+        .favorite-select-btn {
+            width: 100%;
+            background: #2C3E50;
+            color: white;
+            border: none;
+            padding: 8px;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-radius: 0 0 12px 12px;
+        }
+
+        .favorite-select-btn:hover {
+            background: #34495E;
+        }
+
+        /* Новые стили для кнопки избранного */
+        .btn-favorite {
+            background-color: #bdc3c7;
+            color: white;
+            border: none;
+            padding: 12px 18px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 12px;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            min-width: 60px;
+            position: relative;
+        }
+
+        .btn-favorite.active {
+            background-color: #FFA500;
+        }
+
+        .character-footer {
+            justify-content: space-between;
+        }
