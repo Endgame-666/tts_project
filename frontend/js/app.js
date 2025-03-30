@@ -93,6 +93,17 @@ document.querySelectorAll('.btn-favorite').forEach(btn => {
 
 updateFavorites();
 
+document.querySelectorAll('.btn-select').forEach(button => {
+    button.addEventListener('click', function() {
+        const characterCard = this.closest('.character-card');
+        const characterId = characterCard.getAttribute('data-character-id');
+        tg.sendData(JSON.stringify({
+            characterId: parseInt(characterId)
+        }));
+        tg.close();
+    });
+});
+
 document.querySelectorAll('.btn-play').forEach(button => {
     button.addEventListener('click', function() {
         const characterCard = this.closest('.character-card');
@@ -120,3 +131,4 @@ document.querySelectorAll('.btn-play').forEach(button => {
         };
     });
 });
+
