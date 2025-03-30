@@ -23,7 +23,7 @@ from bot.main_keyboard import get_main_keyboard
 from bot.settings import BOT_TOKEN
 from bot.filters import *
 from TTS.tts import get_voice
-from backend.database.user_db import DatabaseManager
+from backend.user_db import DatabaseManager
 from bot.texts import *
 
 db_manager = DatabaseManager()
