@@ -116,7 +116,7 @@ voices: dict[int, ModelParams] = {
         "protect": 0.33
     },
     11: {
-        "name": "Пангольер",
+        "name": "Панго",
         "speed": 0,
         "input_text": "",
         "edge_voice": "ru-RU-DmitryNeural-Male",
