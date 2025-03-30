@@ -5,6 +5,17 @@ let favorites = JSON.parse(localStorage.getItem('favorites')) || [];
 function updateFavorites() {
     const favoritesContainer = document.querySelector('.favorites-scroll');
     const favoritesSection = document.getElementById('favorites-section');
+    const allFavoriteBtns = document.querySelectorAll('.btn-favorite');
+
+    if(favorites.length > 3) {
+        favorites = favorites.slice(-3);
+        localStorage.setItem('favorites', JSON.stringify(favorites));
+    }
+
+    allFavoriteBtns.forEach(btn => {
+        const characterId = btn.closest('.character-card').dataset.characterId;
+        btn.classList.toggle('active', favorites.includes(characterId));
+    });
 
     favoritesContainer.innerHTML = '';
 
@@ -57,12 +68,17 @@ document.querySelectorAll('.btn-favorite').forEach(btn => {
 
     btn.classList.toggle('active', favorites.includes(id));
 
-    btn.addEventListener('click', () => {
-        const index = favorites.indexOf(id);
+    btn.addEventListener('click', (e) => {
+        e.stopPropagation();
 
-        if(index === -1) {
+        const index = favorites.indexOf(id);
+        const wasActive = btn.classList.contains('active');
+        
+        if(!wasActive) {
             if(favorites.length >= 3) {
-                favorites.shift();
+                const removedId = favorites.shift();
+                document.querySelectorAll(`.btn-favorite[data-character-id="${removedId}"]`)
+                    .forEach(b => b.classList.remove('active'));
             }
             favorites.push(id);
         } else {
