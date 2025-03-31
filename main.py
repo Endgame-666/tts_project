@@ -67,6 +67,10 @@ async def new_message_request(message: Message, state: FSMContext):
 def generate_safe_id(input_string: str) -> str:
     return hashlib.md5(input_string.encode()).hexdigest()
 
+@router.message(lambda msg: msg.content_type not in {"text"})
+async def handle_specific_types(message: Message):
+    await message.answer(specific_type_text)
+
 @router.message(F.text == buttons["favorite_messages"] )
 async def get_favorites(message: Message):
     """Показать избранные сообщения"""
