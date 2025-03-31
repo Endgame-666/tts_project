@@ -63,6 +63,7 @@ def mock_callback():
 
 @pytest.mark.asyncio
 async def test_new_message_request_valid_data(mock_message):
+    """Проверяет обработку корректных данных из веб-приложения при выборе персонажа."""
     mock_message.web_app_data = WebAppData(
         data='{"characterId": 1}',
         button_text="Choose Character"
@@ -80,6 +81,7 @@ async def test_new_message_request_valid_data(mock_message):
 
 @pytest.mark.asyncio
 async def test_handle_specific_types(mock_message):
+    """Тестирует обработку неподдерживаемых типов контента (изображения, видео и т.д.)."""
     mock_message.content_type = "photo"
     await handle_specific_types(mock_message)
     mock_message.answer.assert_called_once_with("🤷‍♂️ Непонятный формат. Отправьте, пожалуйста, текст")
@@ -87,6 +89,7 @@ async def test_handle_specific_types(mock_message):
 
 @pytest.mark.asyncio
 async def test_get_favorites_no_data(mock_message):
+    """Проверяет отображение сообщения об отсутствии избранных записей."""
     with patch("main.db_manager.get_user", AsyncMock(return_value=None)):
         await get_favorites(mock_message)
         mock_message.answer.assert_called_with(no_favorite_list_text)
@@ -96,6 +99,7 @@ async def test_get_favorites_no_data(mock_message):
 @patch("main.os.path.basename")
 @patch("main.FSInputFile")
 async def test_get_favorites_with_data(mock_fsinput, mock_basename, mock_message):
+    """Тестирует отображение списка избранных сообщений с аудиофайлами."""
     test_data = {"favourite_messages": ["/path/to/audio1.wav"]}
 
     with patch("main.db_manager.get_user", AsyncMock(return_value=test_data)), \
@@ -108,6 +112,7 @@ async def test_get_favorites_with_data(mock_fsinput, mock_basename, mock_message
 
 @pytest.mark.asyncio
 async def test_process_message_request_random(mock_message):
+    """Проверяет выбор случайного персонажа для генерации сообщения."""
     state = MagicMock(spec=FSMContext)
     state.update_data = AsyncMock()
 
@@ -118,14 +123,16 @@ async def test_process_message_request_random(mock_message):
         mock_message.answer.assert_called_once()
 
 
-
 @pytest.mark.asyncio
 async def test_handle_unknown(mock_message):
+    """Тестирует обработку неизвестных команд вне контекста диалога."""
     await handle_unknown(mock_message)
     mock_message.answer.assert_called_with("🔍 Вы пока не сделали выбор. Нажмите кнопки ниже! 👇")
 
+
 @pytest.mark.asyncio
 async def test_new_message_request_invalid_data(mock_message):
+    """Проверяет обработку некорректных JSON-данных из веб-приложения."""
     mock_message.web_app_data = WebAppData(
         data='{invalid json}',
         button_text="Choose Character"
@@ -141,12 +148,10 @@ async def test_new_message_request_invalid_data(mock_message):
     state.set_state.assert_not_called()
 
 
-
-
-
 @pytest.mark.asyncio
 @patch("main.get_voice", return_value=("dummy", "dummy", "path/to/audio.wav"))
 async def test_process_message_request(mock_get_voice, mock_message):
+    """Тестирует полный цикл обработки запроса на генерацию сообщения."""
     state = MagicMock(spec=FSMContext)
     state.get_data = AsyncMock(return_value={"character_id": 2})
     state.set_state = AsyncMock()
@@ -158,18 +163,24 @@ async def test_process_message_request(mock_get_voice, mock_message):
 
         mock_message.answer_voice.assert_not_called()
 
+
 @pytest.mark.asyncio
 async def test_cmd_start(mock_message):
+    """Проверяет отправку стартового сообщения с клавиатурой."""
     await cmd_start(mock_message)
     mock_message.answer.assert_called_once_with(welcome_message(mock_message), reply_markup=mock_message.answer.call_args[1]["reply_markup"])
 
+
 @pytest.mark.asyncio
 async def test_handle_unknown_message(mock_message):
+    """Проверяет реакцию на сообщения вне основного сценария работы."""
     await handle_unknown(mock_message)
     mock_message.answer.assert_called_once_with(didnt_choose_text)
 
+
 @pytest.mark.asyncio
 async def test_new_message_request_no_web_data(mock_message):
+    """Тестирует обработку запроса без данных веб-приложения."""
     mock_message.web_app_data = None
     state = MagicMock(spec=FSMContext)
 
@@ -178,18 +189,8 @@ async def test_new_message_request_no_web_data(mock_message):
     mock_message.answer.assert_called_once_with(didnt_choose_text)
 
 
-@pytest.mark.asyncio
-async def test_process_message_request_random_voice(mock_message):
-    state = MagicMock(spec=FSMContext)
-    state.update_data = AsyncMock()
-
-    with patch("random.randint", return_value=7):
-        await process_message_request_random(mock_message, state)
-
-        state.update_data.assert_called_once_with(character_id=7)
-        mock_message.answer.assert_called_once()
-
 def test_generate_safe_id():
+    """Проверяет генерацию уникального идентификатора фиксированной длины."""
     input_string = "test_string"
     result = generate_safe_id(input_string)
 
@@ -200,6 +201,7 @@ def test_generate_safe_id():
 @pytest.mark.asyncio
 @patch("main.FSInputFile")
 async def test_get_favorites_with_audio(mock_fsinput, mock_message):
+    """Тестирует отправку аудиофайлов из списка избранного."""
     test_data = {"favourite_messages": ["path/to/audio.wav"]}
 
     with patch("main.db_manager.get_user", AsyncMock(return_value=test_data)), \
@@ -209,11 +211,12 @@ async def test_get_favorites_with_audio(mock_fsinput, mock_message):
 
         assert mock_message.answer.call_count > 1
 
+
 @pytest.mark.asyncio
 async def test_handle_specific_types_non_text(mock_message):
+    """Проверяет фильтрацию неподдерживаемых типов медиаконтента."""
     mock_message.content_type = "photo"
 
     await handle_specific_types(mock_message)
 
     mock_message.answer.assert_called_once_with(specific_type_text)
-
