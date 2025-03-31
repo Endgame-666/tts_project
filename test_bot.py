@@ -194,7 +194,7 @@ def test_generate_safe_id():
     result = generate_safe_id(input_string)
 
     assert isinstance(result, str)
-    assert len(result) == 32   
+    assert len(result) == 32
 
 
 @pytest.mark.asyncio
