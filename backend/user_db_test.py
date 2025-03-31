@@ -167,3 +167,4 @@ async def test_sql_injection_safety(db_manager):
         cursor = await db.execute("SELECT name FROM sqlite_master WHERE type='table'")
         tables = await cursor.fetchall()
         assert ("users",) in tables
+ 
