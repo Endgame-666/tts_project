@@ -141,12 +141,23 @@ def truncate_text(text: str) -> str:
         return " ".join(words[:4]) + "..."
     return text
 
+def check_word_count(text: str, max_words: int = 50):
+    words = text.split()
+    return len(words) < max_words
+def validate_text_length(text: str, max_words: int = 50) -> str:
+    words = text.split()
+    if len(words) > max_words:
+        return (
+            "🚫 Слишком длинный текст!\n"  
+            f"📝 {len(words)} > 🎯 {max_words} слов\n"  
+            "✂️ Сократите и попробуйте снова! 💡"
+        )
+    return ""
+
 @router.message(StateFilter(MessageStates.waiting_for_message_request))
 async def process_message_request(message: Message, state: FSMContext):
     """Главная функция, возвращает голосовое сообщение выбранным голосом"""
     loading_manager = LoadingMessageManager()
-    loading_message = await message.answer(start_working_text)
-    await loading_manager.start(loading_message)
 
     data = await state.get_data()
     character_id = data.get("character_id", 0)
@@ -154,6 +165,13 @@ async def process_message_request(message: Message, state: FSMContext):
     try:
         user_id = message.from_user.id
         message_text = message.text
+
+        if not check_word_count(message_text):
+            await message.answer(text=validate_text_length(message_text))
+            return
+
+        loading_message = await message.answer(start_working_text)
+        await loading_manager.start(loading_message)
 
         audio = get_voice(character_id, message_text)[2]
         audio_path = fr"{audio}"
