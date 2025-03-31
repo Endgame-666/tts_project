@@ -3,7 +3,7 @@ import pytest_asyncio
 from pathlib import Path
 import sqlite3
 import json
-from user_db import DatabaseManager  # замените your_module на имя вашего модуля
+from backend.user_db import DatabaseManager
 import aiosqlite
 
 

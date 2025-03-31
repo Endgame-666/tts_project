@@ -2,7 +2,7 @@ import pytest
 import pytest_asyncio
 import aiosqlite
 from datetime import datetime
-from message_db import DatabaseMessageManager
+from backend.message_db import DatabaseMessageManager
 
 @pytest_asyncio.fixture
 async def db_manager(tmp_path):
