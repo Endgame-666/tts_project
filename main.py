@@ -33,6 +33,7 @@ dp = Dispatcher()
 router = Router()
 dp.include_router(router)
 
+
 @router.message(Command("start"))
 async def cmd_start(message: Message):
     keyboard = get_main_keyboard()
@@ -65,15 +66,16 @@ async def new_message_request(message: Message, state: FSMContext):
     await message.answer(response)
 
 
-
 def generate_safe_id(input_string: str) -> str:
     return hashlib.md5(input_string.encode()).hexdigest()
+
 
 @router.message(lambda msg: msg.content_type not in {"text"})
 async def handle_specific_types(message: Message):
     await message.answer(specific_type_text)
 
-@router.message(F.text == buttons["favorite_messages"] )
+
+@router.message(F.text == buttons["favorite_messages"])
 async def get_favorites(message: Message):
     """Показать избранные сообщения"""
     user_id = message.from_user.id
@@ -116,6 +118,7 @@ async def get_favorites(message: Message):
 
     await message.answer(favorite_list_end_text)
 
+
 @router.message(F.text == buttons["give_feedback"])
 async def process_give_feedback(message: Message):
     pass
@@ -141,18 +144,22 @@ def truncate_text(text: str) -> str:
         return " ".join(words[:4]) + "..."
     return text
 
+
 def check_word_count(text: str, max_words: int = 50):
     words = text.split()
     return len(words) < max_words
+
+
 def validate_text_length(text: str, max_words: int = 50) -> str:
     words = text.split()
     if len(words) > max_words:
         return (
-            "🚫 Слишком длинный текст!\n"  
-            f"📝 {len(words)} > 🎯 {max_words} слов\n"  
+            "🚫 Слишком длинный текст!\n"
+            f"📝 {len(words)} > 🎯 {max_words} слов\n"
             "✂️ Сократите и попробуйте снова! 💡"
         )
     return ""
+
 
 @router.message(StateFilter(MessageStates.waiting_for_message_request))
 async def process_message_request(message: Message, state: FSMContext):
@@ -196,7 +203,6 @@ async def process_message_request(message: Message, state: FSMContext):
         await state.clear()
 
 
-
 @router.callback_query(MessageCallback.filter(F.action == "a"))
 async def add_to_favorites(callback: CallbackQuery):
     """Добавляет в избранное сообщение"""
@@ -237,8 +243,6 @@ async def add_to_favorites(callback: CallbackQuery):
             await callback.answer("Произошла ошибка.")
 
 
-
-
 @router.callback_query(MessageCallback.filter(F.action == "d"))
 async def remove_from_favorites(
         callback: CallbackQuery,
@@ -258,10 +262,12 @@ async def remove_from_favorites(
     await callback.answer(deleted_from_favorite_text)
     await callback.message.delete()
 
+
 @router.message()
 async def handle_unknown(message: Message):
     """Когда еще ничего не выбрали"""
     await message.answer(didnt_choose_text)
+
 
 async def main() -> None:
     bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
