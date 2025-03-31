@@ -24,7 +24,7 @@ from bot.settings import BOT_TOKEN
 from bot.filters import *
 from TTS.tts import get_voice
 from backend.user_db import DatabaseManager
-from backend.favorite_msg_db import DatabaseMessageManager
+from backend.message_db import DatabaseMessageManager
 from bot.texts import *
 
 db_fav_manager = DatabaseMessageManager()
