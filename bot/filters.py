@@ -5,6 +5,7 @@ from aiogram.fsm.state import State, StatesGroup
 class MessageCallback(CallbackData, prefix="favorite"):
     action: str
     message_file: str
+    text_id: str
 
 
 

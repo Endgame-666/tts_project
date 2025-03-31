@@ -24,8 +24,10 @@ from bot.settings import BOT_TOKEN
 from bot.filters import *
 from TTS.tts import get_voice
 from backend.user_db import DatabaseManager
+from backend.favorite_msg_db import DatabaseMessageManager
 from bot.texts import *
 
+db_fav_manager = DatabaseMessageManager()
 db_manager = DatabaseManager()
 dp = Dispatcher()
 router = Router()
@@ -87,18 +89,22 @@ async def get_favorites(message: Message):
         try:
             folder_name = os.path.basename(os.path.dirname(audio_path))
             file = FSInputFile(audio_path)
-
+            data = await db_fav_manager.get_message_text(audio_path)
+            text = data["text"]
+            hero_name = CHARACTER_NAMES[data["character"]]
+            text_msg = await message.answer(f"[{hero_name}]: {text}")
+            text_message_id = text_msg.message_id
             builder = InlineKeyboardBuilder()
             builder.row(
                 InlineKeyboardButton(
                     text=del_from_favorites_text,
                     callback_data=MessageCallback(
-                        action="del",
-                        message_file=folder_name
+                        action="d",
+                        message_file=folder_name,
+                        text_id=str(text_message_id)
                     ).pack()
                 )
             )
-
             await message.answer_audio(
                 audio=file,
                 reply_markup=builder.as_markup()
@@ -109,6 +115,10 @@ async def get_favorites(message: Message):
             await message.answer("❌ Ошибка загрузки аудио")
 
     await message.answer(favorite_list_end_text)
+
+@router.message(F.text == buttons["give_feedback"])
+async def process_give_feedback(message: Message):
+    pass
 
 
 @router.message(F.text == buttons["random_voice"])
@@ -124,6 +134,12 @@ async def process_message_request_random(message: Message, state: FSMContext):
     )
     await message.answer(response)
 
+
+def truncate_text(text: str) -> str:
+    words = text.split()
+    if len(words) > 4:
+        return " ".join(words[:4]) + "..."
+    return text
 
 @router.message(StateFilter(MessageStates.waiting_for_message_request))
 async def process_message_request(message: Message, state: FSMContext):
@@ -149,10 +165,10 @@ async def process_message_request(message: Message, state: FSMContext):
         builder.row(
             InlineKeyboardButton(
                 text=add_to_favorite_text,
-                callback_data=MessageCallback(action="add", message_file=folder_name).pack()
+                callback_data=MessageCallback(action="a", message_file=folder_name, text_id="n").pack()
             )
         )
-
+        added = await db_fav_manager.save_message(audio_path, truncate_text(message_text), character_id)
         await asyncio.sleep(3)
         await loading_manager.stop()
         await message.answer_voice(voice=voice_file, reply_markup=builder.as_markup())
@@ -163,10 +179,10 @@ async def process_message_request(message: Message, state: FSMContext):
 
 
 
-@router.callback_query(MessageCallback.filter(F.action == "add"))
+@router.callback_query(MessageCallback.filter(F.action == "a"))
 async def add_to_favorites(callback: CallbackQuery):
     """Добавляет в избранное сообщение"""
-    if callback.data.split(":")[1] == "add":
+    if callback.data.split(":")[1] == "a":
         user_id = callback.from_user.id
         try:
             message_file = callback.data.split(":")[2]
@@ -205,7 +221,7 @@ async def add_to_favorites(callback: CallbackQuery):
 
 
 
-@router.callback_query(MessageCallback.filter(F.action == "del"))
+@router.callback_query(MessageCallback.filter(F.action == "d"))
 async def remove_from_favorites(
         callback: CallbackQuery,
         callback_data: MessageCallback
@@ -213,9 +229,13 @@ async def remove_from_favorites(
     """Удаляет сообщение из избранного"""
     user_id = callback.from_user.id
     user_data = await db_manager.get_user(user_id)
+    text_message_id = callback_data.text_id
     file_id = callback_data.message_file
     target_path = fr"C:\Users\Вадим\AppData\Local\Temp\gradio\{file_id}\audio.wav"
-
+    await callback.bot.delete_message(
+        chat_id=callback.message.chat.id,
+        message_id=text_message_id
+    )
     await db_manager.remove_from_favourites(user_id, target_path)
     await callback.answer(deleted_from_favorite_text)
     await callback.message.delete()
