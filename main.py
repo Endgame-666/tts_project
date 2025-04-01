@@ -134,11 +134,11 @@ async def process_give_feedback(message: Message, state: FSMContext):
 
     await message.answer(response)
 
-    # Устанавливаем состояние ожидания ответа от пользователя
     await state.set_state(FeedbackStates.waiting_for_feedback)
 
     if character_id is not None:
         await state.update_data(character_id=character_id)
+
 
 @router.message(StateFilter(FeedbackStates.waiting_for_feedback))
 async def save_feedback_voice(message: Message, state: FSMContext):
@@ -165,6 +165,7 @@ async def save_feedback_voice(message: Message, state: FSMContext):
         await state.set_state(MessageStates.waiting_for_message_request)
     else:
         await state.clear()
+
 
 @router.message(F.text == buttons["random_voice"])
 async def process_message_request_random(message: Message, state: FSMContext):

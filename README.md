@@ -46,7 +46,12 @@ CREATE TABLE IF NOT EXISTS users (
     user_name TEXT,
     favourite_messages TEXT
 );
-
+-- user_feedback_db
+CREATE TABLE IF NOT EXISTS feedback_voices (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    voice_name TEXT NOT NULL
+);
 -- message_db
 CREATE TABLE IF NOT EXISTS messages (
     file_path TEXT PRIMARY KEY,

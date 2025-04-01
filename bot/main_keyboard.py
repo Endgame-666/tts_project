@@ -1,7 +1,8 @@
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton # type: ignore
-from aiogram.utils.keyboard import ReplyKeyboardBuilder # type: ignore
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton  # type: ignore
+from aiogram.utils.keyboard import ReplyKeyboardBuilder  # type: ignore
 from bot.texts import *
 from aiogram.types.web_app_info import WebAppInfo
+
 
 def get_main_keyboard():
     builder = ReplyKeyboardBuilder()

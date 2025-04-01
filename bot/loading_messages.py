@@ -3,6 +3,7 @@ import asyncio
 from aiogram.types import Message
 from bot.texts import loading_messages
 
+
 def get_random_loading_message() -> str:
     return random.choice(loading_messages)
 

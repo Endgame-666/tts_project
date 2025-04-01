@@ -59,8 +59,6 @@ def mock_callback():
     return callback
 
 
-
-
 @pytest.mark.asyncio
 async def test_new_message_request_valid_data(mock_message):
     """Проверяет обработку корректных данных из веб-приложения при выборе персонажа."""
@@ -168,7 +166,8 @@ async def test_process_message_request(mock_get_voice, mock_message):
 async def test_cmd_start(mock_message):
     """Проверяет отправку стартового сообщения с клавиатурой."""
     await cmd_start(mock_message)
-    mock_message.answer.assert_called_once_with(welcome_message(mock_message), reply_markup=mock_message.answer.call_args[1]["reply_markup"])
+    mock_message.answer.assert_called_once_with(welcome_message(mock_message),
+                                                reply_markup=mock_message.answer.call_args[1]["reply_markup"])
 
 
 @pytest.mark.asyncio

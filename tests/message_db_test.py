@@ -4,6 +4,7 @@ import aiosqlite
 from datetime import datetime
 from backend.message_db import DatabaseMessageManager
 
+
 @pytest_asyncio.fixture
 async def db_manager(tmp_path):
     db_path = tmp_path / "test.db"

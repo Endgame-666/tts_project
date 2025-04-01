@@ -14,8 +14,6 @@ async def db_manager(tmp_path):
     yield manager
 
 
-
-
 @pytest.mark.asyncio
 async def test_create_tables(db_manager):
     """Проверяет корректное создание таблиц в базе данных при инициализации."""

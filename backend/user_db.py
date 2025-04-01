@@ -3,6 +3,7 @@ import json
 from typing import Optional, List
 import aiosqlite
 
+
 class DatabaseManager:
     def __init__(self, db_name: str = "bot.db"):
         self.db_name = db_name
@@ -29,7 +30,6 @@ class DatabaseManager:
                 )
             ''')
 
-                
             conn.commit()
 
     async def add_user(self, user_id: int, user_name: str) -> bool:
@@ -119,7 +119,6 @@ class DatabaseManager:
                 (user_id, voice_name)
             )
             await db.commit()
-
 
     async def get_feedback_voices(self, user_id: int) -> List[str]:
         """Получаем список всех голосов, предложенных пользователем"""

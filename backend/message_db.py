@@ -2,6 +2,7 @@ import sqlite3
 import aiosqlite
 from typing import Optional
 
+
 class DatabaseMessageManager:
     def __init__(self, db_name: str = "bot.db"):
         self.db_name = db_name
