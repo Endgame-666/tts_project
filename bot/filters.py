@@ -14,3 +14,6 @@ class MessageStates(StatesGroup):
     selected_character = State()
     waiting_for_favorite_messages = State()
 
+class FeedbackStates(StatesGroup):
+    waiting_for_feedback = State()
+

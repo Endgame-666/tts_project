@@ -120,9 +120,51 @@ async def get_favorites(message: Message):
 
 
 @router.message(F.text == buttons["give_feedback"])
-async def process_give_feedback(message: Message):
-    pass
+async def process_give_feedback(message: Message, state: FSMContext):
+    """Предложить голос"""
+    user_id = message.from_user.id
+    data = await state.get_data()
+    character_id = data.get("character_id", None)
 
+    response = (
+        f"💡 Отличная идея! 🎭✨\n"
+        f"Мы всегда рады новым голосам! 🔥\n"
+        f"📝 Напишите имя персонажа, чей голос вы хотите добавить, в следующем сообщении! ⬇️"
+    )
+
+    await message.answer(response)
+
+    # Устанавливаем состояние ожидания ответа от пользователя
+    await state.set_state(FeedbackStates.waiting_for_feedback)
+
+    if character_id is not None:
+        await state.update_data(character_id=character_id)
+
+@router.message(StateFilter(FeedbackStates.waiting_for_feedback))
+async def save_feedback_voice(message: Message, state: FSMContext):
+    """Сохранение предложенного голоса в базу"""
+    user_id = message.from_user.id
+    suggested_voice = message.text.strip()
+
+    if len(suggested_voice) > 50:
+        await message.answer(
+            "❌ Имя слишком длинное! 🔥\n"
+            "Попробуйте снова, но не более 50 символов. ⬇️"
+        )
+        return
+
+    await db_manager.save_suggested_voice(user_id, suggested_voice)
+
+    await message.answer(
+        f"✅ Спасибо за предложение! 🎙️\n"
+        f"Мы рассмотрим добавление персонажа <b>{suggested_voice}</b> в список голосов!"
+    )
+
+    data = await state.get_data()
+    if "character_id" in data:
+        await state.set_state(MessageStates.waiting_for_message_request)
+    else:
+        await state.clear()
 
 @router.message(F.text == buttons["random_voice"])
 async def process_message_request_random(message: Message, state: FSMContext):

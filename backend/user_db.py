@@ -1,6 +1,6 @@
 import sqlite3
 import json
-from typing import Optional
+from typing import Optional, List
 import aiosqlite
 
 class DatabaseManager:
@@ -21,6 +21,15 @@ class DatabaseManager:
                 )
             ''')
 
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS feedback_voices (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER NOT NULL,
+                    voice_name TEXT NOT NULL
+                )
+            ''')
+
+                
             conn.commit()
 
     async def add_user(self, user_id: int, user_name: str) -> bool:
@@ -101,3 +110,39 @@ class DatabaseManager:
                     (json.dumps(favourites), user_id)
                 )
                 await db.commit()
+
+    async def add_feedback_voice(self, user_id: int, voice_name: str):
+        """Добавляем предложенный голос от пользователя"""
+        async with aiosqlite.connect(self.db_name) as db:
+            await db.execute(
+                "INSERT INTO feedback_voices (user_id, voice_name) VALUES (?, ?)",
+                (user_id, voice_name)
+            )
+            await db.commit()
+
+
+    async def get_feedback_voices(self, user_id: int) -> List[str]:
+        """Получаем список всех голосов, предложенных пользователем"""
+        async with aiosqlite.connect(self.db_name) as db:
+            cursor = await db.execute(
+                "SELECT voice_name FROM feedback_voices WHERE user_id = ?",
+                (user_id,)
+            )
+            voices = await cursor.fetchall()
+            return [voice[0] for voice in voices] if voices else []
+
+    async def save_suggested_voice(self, user_id: int, voice_name: str):
+        """Сохраняет предложенный голос в БД"""
+        async with aiosqlite.connect(self.db_name) as db:
+            await db.execute('''
+                CREATE TABLE IF NOT EXISTS suggested_voices (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER,
+                    voice_name TEXT
+                )
+            ''')
+            await db.execute(
+                'INSERT INTO suggested_voices (user_id, voice_name) VALUES (?, ?)',
+                (user_id, voice_name)
+            )
+            await db.commit()
