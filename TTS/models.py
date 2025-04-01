@@ -197,7 +197,7 @@ voices: dict[int, ModelParams] = {
     },
     19: {
         "name": "СФ",
-        "speed": 15,
+        "speed": -15,
         "input_text": "",
         "edge_voice": "ru-RU-DmitryNeural-Male",
         "transpose": -3,
