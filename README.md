@@ -55,4 +55,5 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
-## 🗾 Схема сервиса и пользовательские сценарии
+## 🗾 Архитектура сервиса и пользовательские сценарии
+- https://miro.com/app/board/uXjVLGen_eE=/
