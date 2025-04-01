@@ -11,10 +11,48 @@
 - 💾 Сохранение любимых сообщений в избранном
 - 🎰 Выбор голоса случайным образом
 
-## 📋 Требования
-
 ## 🏗 Структура проекта
 
+```
+tts_project/
+├── TTS/
+│   ├── models.py
+│   └── tts.py
+├── backend/
+│   ├──  message_db.py
+│   └──  user_db.py
+├── bot/
+│   ├── filters.py
+│   ├── loading_messages.py
+│   ├── main_keyboard.py
+│   └── texts.py
+├── frontend/
+│   ├── audio/
+│   ├── css/
+│   ├── js/
+│   ├── pictures/
+│   └── index.html
+├── tests/
+│   ├── message_db_test.py
+│   ├── test_bot.py
+│   └── user_db_test.py
+└── main.py
+```
 ## 📊 Базы данных
+```sql
+-- user_db
+CREATE TABLE IF NOT EXISTS users (
+    user_id INTEGER PRIMARY KEY,
+    user_name TEXT,
+    favourite_messages TEXT
+);
 
+-- message_db
+CREATE TABLE IF NOT EXISTS messages (
+    file_path TEXT PRIMARY KEY,
+    message_text TEXT NOT NULL,
+    hero_id INT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+```
 ## 🗾 Схема сервиса и пользовательские сценарии
