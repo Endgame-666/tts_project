@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS messages (
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 ```
-## 🗾 Архитектура сервиса 
+## 🗾 C4 Архитектура сервиса 
 - https://miro.com/app/board/uXjVLGen_eE=/
 
 ## ❗️ Важные ссылки
