@@ -134,5 +134,85 @@ voices: dict[int, ModelParams] = {
         "method": "rmvpe",
         "index_rate": 1,
         "protect": 0
+    },
+    13: {
+        "name": "МистерБист",
+        "speed": 0,
+        "input_text": "",
+        "edge_voice": "ru-RU-DmitryNeural-Male",
+        "transpose": 5,
+        "method": "rmvpe",
+        "index_rate": 1,
+        "protect": 0
+    },
+    14: {
+        "name": "Жириновский",
+        "speed": 0,
+        "input_text": "",
+        "edge_voice": "ru-RU-DmitryNeural-Male",
+        "transpose": 1,
+        "method": "rmvpe",
+        "index_rate": 0,
+        "protect": 0.5
+    },
+    15: {
+        "name": "Копатыч",
+        "speed": 10,
+        "input_text": "",
+        "edge_voice": "ru-RU-DmitryNeural-Male",
+        "transpose": 0,
+        "method": "rmvpe",
+        "index_rate": 0,
+        "protect": 0
+    },
+    16: {
+        "name": "Лунтик",
+        "speed": 10,
+        "input_text": "",
+        "edge_voice": "ru-RU-SvetlanaNeural-Female",
+        "transpose": 3,
+        "method": "rmvpe",
+        "index_rate": 0,
+        "protect": 0.5
+    },
+    17: {
+        "name": "Нолик",
+        "speed": 0,
+        "input_text": "",
+        "edge_voice": "ru-RU-SvetlanaNeural-Female",
+        "transpose": 16,
+        "method": "rmvpe",
+        "index_rate": 0,
+        "protect": 0.33
+    },
+    18: {
+        "name": "Эрен Йегер новый",
+        "speed": 0,
+        "input_text": "",
+        "edge_voice": "ru-RU-DmitryNeural-Male",
+        "transpose": 1,
+        "method": "rmvpe",
+        "index_rate": 1,
+        "protect": 0
+    },
+    19: {
+        "name": "СФ",
+        "speed": 15,
+        "input_text": "",
+        "edge_voice": "ru-RU-DmitryNeural-Male",
+        "transpose": -3,
+        "method": "rmvpe",
+        "index_rate": 1,
+        "protect": 0
+    },
+    20: {
+        "name": "Джинкс",
+        "speed": 0,
+        "input_text": "",
+        "edge_voice": "ru-RU-SvetlanaNeural-Female",
+        "transpose": 5,
+        "method": "rmvpe",
+        "index_rate": 0,
+        "protect": 0.5
     }
 }

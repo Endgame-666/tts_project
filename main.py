@@ -127,7 +127,7 @@ async def process_give_feedback(message: Message):
 @router.message(F.text == buttons["random_voice"])
 async def process_message_request_random(message: Message, state: FSMContext):
     """Выбрать голос случайным образом"""
-    character_id = random.randint(1, 12)
+    character_id = random.randint(1, 20)
     await state.update_data(character_id=character_id)
     await state.set_state(MessageStates.waiting_for_message_request)
     response = (
@@ -145,12 +145,12 @@ def truncate_text(text: str) -> str:
     return text
 
 
-def check_word_count(text: str, max_words: int = 50):
+def check_word_count(text: str, max_words: int = 30):
     words = text.split()
     return len(words) < max_words
 
 
-def validate_text_length(text: str, max_words: int = 50) -> str:
+def validate_text_length(text: str, max_words: int = 30) -> str:
     words = text.split()
     if len(words) > max_words:
         return (
