@@ -22,7 +22,7 @@ from bot.loading_messages import LoadingMessageManager
 from bot.main_keyboard import get_main_keyboard
 from bot.settings import BOT_TOKEN
 from bot.filters import *
-from tts.tts import get_voice
+from TTS.tts import get_voice
 from backend.user_db import DatabaseManager
 from backend.message_db import DatabaseMessageManager
 from bot.texts import *
