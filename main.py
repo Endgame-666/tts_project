@@ -92,6 +92,9 @@ async def get_favorites(message: Message):
             folder_name = os.path.basename(os.path.dirname(audio_path))
             file = FSInputFile(audio_path)
             data = await db_fav_manager.get_message_text(audio_path)
+            if not data:
+                await message.answer("❌ Не удалось найти данные для аудио.")
+                continue
             text = data["text"]
             hero_name = CHARACTER_NAMES[data["character"]]
             text_msg = await message.answer(f"[{hero_name}]: {text}")

@@ -126,11 +126,11 @@ voices: dict[int, ModelParams] = {
         "protect": 0
     },
     12: {
-        "name": "Цмка",
+        "name": "Баба Зина",
         "speed": 0,
         "input_text": "",
         "edge_voice": "ru-RU-SvetlanaNeural-Female",
-        "transpose": 6.5,
+        "transpose": 1,
         "method": "rmvpe",
         "index_rate": 1,
         "protect": 0
